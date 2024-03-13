@@ -39,6 +39,8 @@ def entso_e_nuclear(entso_e_api_key):
     unavailable_nuclear1 = unavailable_nuclear1[unavailable_nuclear1['resolution'] == 'PT60M'] 
     unavailable_nuclear1 = unavailable_nuclear1[['start', 'end','avail_qty','nominal_power', 'production_resource_name']]
 
+    print(unavailable_nuclear1)
+
     # "Unavailability of production plants" from Entso-E includes Loviisa units
     unavailable_production = client.query_unavailability_of_production_units(country_code, start, end, docstatus=None, periodstartupdate=None, periodendupdate=None)
     unavailable_nuclear2 = unavailable_production[unavailable_production['plant_type'] == 'Nuclear'] 
@@ -46,10 +48,14 @@ def entso_e_nuclear(entso_e_api_key):
     unavailable_nuclear2 = unavailable_nuclear2[unavailable_nuclear2['resolution'] == 'PT60M'] 
     unavailable_nuclear2 = unavailable_nuclear2[['start', 'end','avail_qty','nominal_power', 'production_resource_name']]
 
+    print(unavailable_nuclear2)
+
     # Combine datasets
     unavailable_nuclear = pd.concat([unavailable_nuclear1, unavailable_nuclear2], axis=0)
     unavailable_nuclear["nominal_power"] = pd.to_numeric(unavailable_nuclear["nominal_power"])
     unavailable_nuclear["avail_qty"] = pd.to_numeric(unavailable_nuclear["avail_qty"])
+
+    print(unavailable_nuclear)
 
     # Drop "created_doc_time" column
     unavailable_nuclear = unavailable_nuclear.reset_index(drop=True)
@@ -97,7 +103,7 @@ def main():
     if not entso_e_api_key:
         print("ENTSO_E_API_KEY not found in .env.local file.")
         return
-
+    
     try:
         # Fetch nuclear power forecast data
         nuclear_forecast_data = entso_e_nuclear(entso_e_api_key)

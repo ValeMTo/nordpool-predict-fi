@@ -19,7 +19,7 @@ def train_model(df, fmisid_ws, fmisid_t):
     df = shuffle(df, random_state=42)
     
     # We don't need what we are trying to predict in the training data
-    df = df.drop(columns=['PricePredict_cpkWh'])
+    df = df.drop(columns=['predicted_spot_price'])
 
     # Infer some missing, required time-related features from the timestamp
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -28,14 +28,14 @@ def train_model(df, fmisid_ws, fmisid_t):
     df['month'] = df['timestamp'].dt.month
 
     # Remove outliers using the IQR method
-    Q1 = df['Price_cpkWh'].quantile(0.25)
-    Q3 = df['Price_cpkWh'].quantile(0.75)
+    Q1 = df['true_spot_price'].quantile(0.25)
+    Q3 = df['true_spot_price'].quantile(0.75)
     IQR = Q3 - Q1
 
     # This leaves a lot of "outliers" into the data, but that was necessary to retain the exteme price spikes that are the most interesting to predict.
     min_threshold = Q1 - 3 * IQR
     max_threshold = Q3 + 100 * IQR
-    df_filtered = df[(df['Price_cpkWh'] >= min_threshold) & (df['Price_cpkWh'] <= max_threshold)]
+    df_filtered = df[(df['true_spot_price'] >= min_threshold) & (df['true_spot_price'] <= max_threshold)]
 
     # TODO: Training without WindPowerCapacityMW results in a marginally better model, so for now we are not including it. Perhaps it had more importance when we had a direct WindPowerMW feature. We use the wind speed and temperature from the FMI data as proxies for wind power generation. This is something to be studied further, given time. Does increasing the nr of weather stations for wind park wind speeds and urban area temperatures improve the model? Make it worse? Or no difference?
 
@@ -43,7 +43,7 @@ def train_model(df, fmisid_ws, fmisid_t):
     # If you defined a different set of FMI stations in your .env.local, they should automatically be reflected here
     # You may need to manually add those ws_ and t_ columns to your SQLite database first though; TODO: Automate this process
     X_filtered = df_filtered[['day_of_week', 'hour', 'month', 'NuclearPowerMW'] + fmisid_ws + fmisid_t]
-    y_filtered = df_filtered['Price_cpkWh']
+    y_filtered = df_filtered['true_spot_price']
 
     # Train the first model (Random Forest) on the filtered data
     # TODO: Make a --continuous option explicit, not implicit like it is now, if also running --prediction
@@ -133,8 +133,8 @@ def train_model(df, fmisid_ws, fmisid_t):
 
         # Pick input/output features for the random sample
         X_random_sample = random_sample[['day_of_week', 'hour', 'month', 'NuclearPowerMW'] + fmisid_ws + fmisid_t]
-        y_filtered = df_filtered['Price_cpkWh']
-        y_random_sample_true = random_sample['Price_cpkWh']
+        y_filtered = df_filtered['true_spot_price']
+        y_random_sample_true = random_sample['true_spot_price']
 
         # Predict the prices for the randomly selected samples
         y_random_sample_pred = rf.predict(X_random_sample)

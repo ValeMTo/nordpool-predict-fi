@@ -266,15 +266,15 @@ if args.predict:
     # print("Filled-in dataframe before predict:\n", df)
     print("→ Days of data coverage (should be 7 back, 5 forward for now): ", int(len(df)/24))
 
-    # DEBUG: Save a copy of the df to a CSV file for inspection
-    # df.to_csv(os.path.join(data_folder_path + "/private", "debug_df.csv"), index=False)
-
     # Fill in the 'hour', 'day_of_week', and 'month' columns for the model
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
     df['day_of_week'] = df['Timestamp'].dt.dayofweek + 1
     df['hour'] = df['Timestamp'].dt.hour
     df['month'] = df['Timestamp'].dt.month
          
+    # DEBUG: Save a copy of the df to a CSV file for inspection
+    #df.to_csv(os.path.join(data_folder_path + "/private", "debug_df.csv"), index=False)
+
     # Use (if coming from --train) or load and apply a Random Forest model for predictions
     if rf_trained is None:
         rf_model = joblib.load(rf_model_path)
@@ -331,7 +331,7 @@ if args.predict:
         print("* Predictions NOT committed to the database (no --commit).")
         
     # DEBUG: save to CSV for inspection
-    # df.to_csv(os.path.join(data_folder_path + "/private", "predictions_df.csv"), index=False)    
+    df.to_csv(os.path.join(data_folder_path + "/private", "predictions_df.csv"), index=False)    
     # exit()
 
 # Narrate can be used with the previous arguments
